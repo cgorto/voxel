@@ -1,0 +1,54 @@
+use crate::prelude::*;
+use bevy::{
+    asset::RenderAssetUsages,
+    render::{
+        render_resource::{Extent3d, TextureDescriptor, TextureDimension, TextureUsages},
+        renderer::{RenderDevice, RenderQueue},
+    },
+};
+use nokhwa::{pixel_format::RgbAFormat, utils::RequestedFormat, *};
+pub struct VoxelCameraPlugin;
+
+impl Plugin for VoxelCameraPlugin {
+    fn build(&self, app: &mut App) {
+        let index = utils::CameraIndex::Index(0);
+        let requested = RequestedFormat::new::<RgbAFormat>(
+            utils::RequestedFormatType::AbsoluteHighestFrameRate,
+        );
+        let camera = nokhwa::Camera::new(index, requested).unwrap();
+        app.insert_non_send_resource(camera)
+            .add_systems(Update, camera_to_texture);
+    }
+}
+
+pub fn camera_to_texture(
+    mut cam: NonSendMut<nokhwa::Camera>,
+    mut images: ResMut<Assets<Image>>,
+    mut commands: Commands,
+) {
+    let frame = cam.frame().unwrap().decode_image::<RgbAFormat>().unwrap();
+    let w = frame.width();
+    let h = frame.height();
+    let texture_size = Extent3d {
+        width: frame.width(),
+        height: frame.height(),
+        depth_or_array_layers: 1,
+    };
+    let mut image = Image::new(
+        texture_size,
+        TextureDimension::D2,
+        frame.to_vec(),
+        bevy::render::render_resource::TextureFormat::Rgba8UnormSrgb,
+        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+    );
+    image.texture_descriptor.usage = TextureUsages::COPY_DST
+        | TextureUsages::STORAGE_BINDING
+        | TextureUsages::TEXTURE_BINDING
+        | TextureUsages::RENDER_ATTACHMENT;
+    let handle = images.add(image);
+    commands.spawn(Sprite {
+        image: handle.clone(),
+        custom_size: Some(vec2(w as f32, h as f32)),
+        ..default()
+    });
+}
