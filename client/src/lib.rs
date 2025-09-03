@@ -14,6 +14,10 @@ pub struct AppPlugin;
 
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((DefaultPlugins, plugins::camera::VoxelCameraPlugin));
+        app.add_plugins((
+            DefaultPlugins,
+            plugins::camera::VoxelCameraPlugin,
+            plugins::processing::ImageProcessingPlugin,
+        ));
     }
 }
