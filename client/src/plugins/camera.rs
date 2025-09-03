@@ -22,6 +22,7 @@ impl Plugin for VoxelCameraPlugin {
             .add_systems(FixedUpdate, camera_to_texture)
             .add_systems(Startup, setup)
             .insert_resource(FrameInfo::default())
+            .insert_resource(VoxelInfo::default())
             .insert_resource(Time::<Fixed>::from_hz(fps));
     }
 }
