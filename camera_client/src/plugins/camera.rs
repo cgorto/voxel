@@ -1,12 +1,8 @@
 use crate::prelude::*;
 use bevy::{
     asset::RenderAssetUsages,
-    render::{
-        extract_resource::ExtractResource,
-        render_resource::{
-            Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
-        },
-        renderer::{RenderDevice, RenderQueue},
+    render::render_resource::{
+        Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
     },
 };
 use nokhwa::{pixel_format::RgbAFormat, utils::RequestedFormat, *};
@@ -31,7 +27,7 @@ pub fn setup(
     mut images: ResMut<Assets<Image>>,
 ) {
     commands.spawn(Camera2d);
-    cam.open_stream();
+    let _ = cam.open_stream();
     let base_frame = cam.frame().unwrap().decode_image::<RgbAFormat>().unwrap();
     let texture_size = Extent3d {
         width: base_frame.width(),
@@ -64,7 +60,6 @@ pub fn setup(
 pub fn camera_to_texture(
     mut cam: NonSendMut<nokhwa::Camera>,
     mut images: ResMut<Assets<Image>>,
-    mut commands: Commands,
     mut cam_text: ResMut<CameraTextures>,
 ) {
     cam.open_stream();
