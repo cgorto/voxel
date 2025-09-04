@@ -20,11 +20,16 @@ pub struct DisplayTexture {
 #[derive(Resource)]
 pub struct ProcessingPipeline {
     pub texture_bind_group_layout: BindGroupLayout,
-    pub pipeline: CachedComputePipelineId,
+    pub raymarch_bind_group_layout: BindGroupLayout,
+    pub diff_pipeline: CachedComputePipelineId,
+    pub raymarch_pipeline: CachedComputePipelineId,
 }
 
 #[derive(Resource)]
-pub struct ProcessingBindGroup(pub BindGroup);
+pub struct ProcessingBindGroup(pub [BindGroup; 2]);
+
+#[derive(Resource, ExtractResource, Clone)]
+pub struct VoxelGridTexture(pub Handle<Image>);
 
 #[derive(Resource, Default, ExtractResource, Clone)]
 pub struct FrameInfo {
