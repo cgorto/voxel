@@ -255,8 +255,19 @@ impl Node for ProcessingNode {
                 let pipe = pipeline_cache
                     .get_compute_pipeline(pipeline.diff_pipeline)
                     .unwrap();
+                let pipe2 = pipeline_cache
+                    .get_compute_pipeline(pipeline.raymarch_pipeline)
+                    .unwrap();
                 pass.set_bind_group(0, &bind_group[0], &[]);
+                pass.set_bind_group(1, &bind_group[1], &[]);
                 pass.set_pipeline(pipe);
+                pass.dispatch_workgroups(
+                    images.size.x as u32 / WORKGROUP_SIZE,
+                    images.size.y as u32 / WORKGROUP_SIZE,
+                    1,
+                );
+                pass.set_pipeline(pipe2);
+
                 pass.dispatch_workgroups(
                     images.size.x as u32 / WORKGROUP_SIZE,
                     images.size.y as u32 / WORKGROUP_SIZE,
