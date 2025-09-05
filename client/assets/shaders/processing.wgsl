@@ -51,7 +51,7 @@ fn cast_ray_into_grid(
     dir: vec3<f32>,
     voxel_n: i32,
     voxel_size: f32,
-    grid_center: vec3<f32>
+    grid_center: vec3<f32>,
     diff: f32
 ) {
     var step_count = 0;
