@@ -35,7 +35,8 @@ impl Plugin for ImageProcessingPlugin {
             ExtractResourcePlugin::<DisplayTexture>::default(),
             ExtractResourcePlugin::<FrameInfo>::default(),
             ExtractResourcePlugin::<VoxelInfo>::default(),
-        ));
+        ))
+        .add_system(Startup, setup);
         let render_app = app.sub_app_mut(RenderApp);
         render_app
             .add_systems(RenderStartup, init_processing_pipeline)
