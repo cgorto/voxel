@@ -35,8 +35,9 @@ impl Plugin for ImageProcessingPlugin {
             ExtractResourcePlugin::<DisplayTexture>::default(),
             ExtractResourcePlugin::<FrameInfo>::default(),
             ExtractResourcePlugin::<VoxelInfo>::default(),
+            ExtractResourcePlugin::<VoxelGridTexture>::default(),
         ))
-        .add_system(Startup, setup);
+        .add_systems(Startup, setup);
         let render_app = app.sub_app_mut(RenderApp);
         render_app
             .add_systems(RenderStartup, init_processing_pipeline)
@@ -67,13 +68,18 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     image.texture_descriptor.usage |= TextureUsages::COPY_SRC | TextureUsages::STORAGE_BINDING;
     let image = images.add(image);
 
+    commands.insert_resource(VoxelGridTexture(image.clone()));
     commands
         .spawn(Readback::texture(image.clone()))
         .observe(|event: On<ReadbackComplete>| {
             let diff: Vec<f32> = event.to_shader_type();
-            info!("Voxel Grid: {:?}", diff);
+            for f in diff {
+                if f > 0.0 {
+                    info!("yay: {}", f);
+                }
+            }
         });
-    commands.insert_resource(VoxelGridTexture(image));
+    info!("set up");
 }
 
 fn init_processing_pipeline(
@@ -89,7 +95,7 @@ fn init_processing_pipeline(
             (
                 texture_storage_2d(TextureFormat::Rgba8Unorm, StorageTextureAccess::ReadOnly),
                 texture_storage_2d(TextureFormat::Rgba8Unorm, StorageTextureAccess::ReadOnly),
-                texture_storage_2d(TextureFormat::Rgba8Unorm, StorageTextureAccess::WriteOnly),
+                texture_storage_2d(TextureFormat::Rgba8Unorm, StorageTextureAccess::ReadWrite),
             ),
         ),
     );
@@ -98,7 +104,7 @@ fn init_processing_pipeline(
         &BindGroupLayoutEntries::sequential(
             ShaderStages::COMPUTE,
             (
-                texture_storage_2d(TextureFormat::Rgba8Unorm, StorageTextureAccess::ReadOnly),
+                texture_storage_2d(TextureFormat::Rgba8Unorm, StorageTextureAccess::ReadWrite),
                 uniform_buffer::<RaymarchUniforms>(false),
                 texture_storage_3d(TextureFormat::R32Float, StorageTextureAccess::ReadWrite),
             ),
@@ -113,7 +119,10 @@ fn init_processing_pipeline(
         ..default()
     });
     let raymarch_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
-        layout: vec![raymarch_bind_group_layout.clone()],
+        layout: vec![
+            texture_bind_group_layout.clone(),
+            raymarch_bind_group_layout.clone(),
+        ],
         shader: shader.clone(),
         entry_point: Some(Cow::from("raymarch")),
         zero_initialize_workgroup_memory: true,
@@ -219,7 +228,13 @@ impl Node for ProcessingNode {
         match self.state {
             ProcessingState::Loading => {
                 match pipeline_cache.get_compute_pipeline_state(pipeline.diff_pipeline) {
-                    CachedPipelineState::Ok(_) => self.state = ProcessingState::Init,
+                    CachedPipelineState::Ok(_) => {
+                        match pipeline_cache.get_compute_pipeline_state(pipeline.raymarch_pipeline)
+                        {
+                            CachedPipelineState::Ok(_) => self.state = ProcessingState::Init,
+                            _ => {}
+                        }
+                    }
                     CachedPipelineState::Err(
                         bevy::shader::PipelineCacheError::ShaderNotLoaded(_),
                     ) => {}

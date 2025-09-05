@@ -1,9 +1,9 @@
 @group(0) @binding(0) var current: texture_storage_2d<rgba8unorm, read>;
 @group(0) @binding(1) var previous: texture_storage_2d<rgba8unorm, read>;
-@group(0) @binding(2) var output: texture_storage_2d<rgba8unorm, write>;
+@group(0) @binding(2) var output: texture_storage_2d<rgba8unorm, read_write>;
 
 
-@group(1) @binding(0) var difference: texture_storage_2d<rgba8unorm, read>;
+@group(1) @binding(0) var difference: texture_storage_2d<rgba8unorm, read_write>;
 @group(1) @binding(1) var<uniform> u: RaymarchUniforms;
 @group(1) @binding(2) var voxel_grid: texture_storage_3d<r32float, read_write>;
 
@@ -65,7 +65,7 @@ fn cast_ray_into_grid(
 
     for (var i = 0; i < 3; i++) {
         let origin = camera_pos[i];
-        let d = u.look_dir[i];
+        let d = dir[i];
         let mn = grid_min[i];
         let mx = grid_max[i];
 
@@ -96,7 +96,7 @@ fn cast_ray_into_grid(
     var iz = i32(f.z);
 
     if (ix < 0 || ix >= voxel_n || iy < 0 || iy >= voxel_n || iz < 0 || iz >= voxel_n) {
-        return
+        return;
     }
 
     let step_x = select(-1,1, dir.x >= 0.0);
@@ -125,7 +125,7 @@ fn cast_ray_into_grid(
         
         let voxel_coord = vec3<i32>(ix,iy,iz);
         let current_val = textureLoad(voxel_grid, voxel_coord).r;
-        textureStore(voxel_grid,voxel_coord, vec4<f32>(current_val+val, 0.0,0.0,1.0));
+        textureStore(voxel_grid,voxel_coord, vec4<f32>(current_val+diff, 0.0,0.0,1.0));
 
         if (t_max_x < t_max_y && t_max_x < t_max_z) {
             ix += step_x;
@@ -160,12 +160,12 @@ fn raymarch(@builtin(global_invocation_id) invocation_id: vec3<u32>) {
     if (diff <= u.changed_threshold) {
         return;
     }
-    let u = f32(pixel_coord.x);
+    let uc = f32(pixel_coord.x);
     let v = f32(pixel_coord.y);
     let width = f32(screen_size.x);
     let height = f32(screen_size.y);
 
-    let x = u - 0.5 * width;
+    let x = uc - 0.5 * width;
     let y = -(v - 0.5 * height);
     let z = -u.focal_length;
 

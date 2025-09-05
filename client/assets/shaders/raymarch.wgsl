@@ -100,7 +100,7 @@ fn cast_ray_into_grid(
         
         let voxel_coord = vec3<i32>(ix,iy,iz);
         let current_val = textureLoad(voxel_grid, voxel_coord).r;
-        textureStore(voxel_grid,voxel_coord, vec4<f32>(current_val+val, 0.0,0.0,1.0));
+        textureStore(voxel_grid,voxel_coord, vec4<f32>(current_val+diff, 0.0,0.0,1.0));
 
         if (t_max_x < t_max_y && t_max_x < t_max_z) {
             ix += step_x;

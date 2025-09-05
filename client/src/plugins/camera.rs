@@ -21,8 +21,18 @@ impl Plugin for VoxelCameraPlugin {
             .add_systems(PreUpdate, new_frame_reset)
             .add_systems(FixedUpdate, camera_to_texture)
             .add_systems(Startup, setup)
-            .insert_resource(FrameInfo::default())
-            .insert_resource(VoxelInfo::default())
+            .insert_resource(FrameInfo {
+                camera_position: vec3(0.0, 0.0, 0.0),
+                yaw: 0.0,
+                pitch: 0.0,
+                roll: 0.0,
+                fov: 90.0,
+            })
+            .insert_resource(VoxelInfo {
+                n: 10,
+                voxel_size: 1.0,
+                grid_center: vec3(5.0, 5.0, 5.0),
+            })
             .insert_resource(Time::<Fixed>::from_hz(fps));
     }
 }
@@ -83,11 +93,7 @@ pub fn camera_to_texture(
 ) {
     cam.open_stream();
     let frame = cam.frame().unwrap().decode_image::<RgbAFormat>().unwrap();
-    let texture_size = Extent3d {
-        width: frame.width(),
-        height: frame.height(),
-        depth_or_array_layers: 1,
-    };
+
     let current_handle = cam_text.prev.clone();
 
     cam_text.prev = cam_text.current.clone();
