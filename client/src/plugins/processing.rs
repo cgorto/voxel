@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use bevy::{
     asset::RenderAssetUsages,
+    math::ops::tanh,
     render::{
         Render, RenderApp, RenderStartup, RenderSystems,
         extract_resource::ExtractResourcePlugin,
@@ -17,9 +18,7 @@ use bevy::{
         texture::GpuImage,
     },
 };
-use bevy_spacetimedb::*;
 
-use crate::module_bindings::{update_voxel_reducer::update_voxel, voxel_type::Voxel};
 use crate::prelude::*;
 
 pub struct ImageProcessingPlugin;
@@ -38,8 +37,7 @@ impl Plugin for ImageProcessingPlugin {
             ExtractResourcePlugin::<VoxelInfo>::default(),
             ExtractResourcePlugin::<VoxelGridTexture>::default(),
         ))
-        .add_systems(Startup, setup)
-        .add_event::<VoxelHitEvent>();
+        .add_systems(Startup, setup);
         let render_app = app.sub_app_mut(RenderApp);
         render_app
             .add_systems(RenderStartup, init_processing_pipeline)
@@ -54,7 +52,6 @@ impl Plugin for ImageProcessingPlugin {
 }
 
 const TEST_VOXEL_SIZE: u32 = 10;
-const PADDED_WIDTH: usize = 64;
 fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     let size = Extent3d {
         width: TEST_VOXEL_SIZE,
@@ -74,34 +71,15 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     commands.insert_resource(VoxelGridTexture(image.clone()));
     commands
         .spawn(Readback::texture(image.clone()))
-        .observe(on_voxel_readback);
-    info!("set up");
-}
-
-pub fn on_voxel_readback(trigger: On<ReadbackComplete>, mut events: EventWriter<VoxelHitEvent>) {
-    let diff: Vec<f32> = trigger.event().to_shader_type();
-
-    let width = TEST_VOXEL_SIZE as usize;
-    let height = TEST_VOXEL_SIZE as usize;
-    let depth = TEST_VOXEL_SIZE as usize;
-
-    for z in 0..depth {
-        for y in 0..height {
-            for x in 0..width {
-                let index = z * (height * PADDED_WIDTH) + y * PADDED_WIDTH + x;
-                let f = diff[index];
+        .observe(|event: On<ReadbackComplete>| {
+            let diff: Vec<f32> = event.to_shader_type();
+            for f in diff {
                 if f > 0.0 {
-                    info!("voxel ({}, {}, {}) = {}", x, y, z, f);
-                    let voxel = Voxel {
-                        x: x as u32,
-                        y: y as u32,
-                        z: z as u32,
-                    };
-                    events.write(VoxelHitEvent { voxel, value: f });
+                    info!("yay: {}", f);
                 }
             }
-        }
-    }
+        });
+    info!("set up");
 }
 
 fn init_processing_pipeline(

@@ -45,7 +45,6 @@ pub fn identity_disconnected(_ctx: &ReducerContext) {
 
 #[spacetimedb::reducer]
 pub fn update_voxel(ctx: &ReducerContext, voxel: Voxel, value: f32) -> Result<(), String> {
-    log::info!("voxel update");
     let idx = voxel.idx(GRID_SIZE.try_into().unwrap());
     for mut grid in ctx.db.voxel_grid().iter() {
         if idx < grid.grid.len().try_into().unwrap() {

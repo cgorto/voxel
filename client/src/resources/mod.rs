@@ -1,4 +1,3 @@
-use crate::module_bindings::*;
 use crate::prelude::*;
 use bevy::render::{
     extract_resource::ExtractResource,
@@ -46,10 +45,4 @@ pub struct VoxelInfo {
     pub n: u32,
     pub voxel_size: f32,
     pub grid_center: Vec3,
-}
-
-#[derive(Event, BufferedEvent)]
-pub struct VoxelHitEvent {
-    pub voxel: Voxel,
-    pub value: f32,
 }
