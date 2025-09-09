@@ -1,0 +1,9 @@
+/home/gorto/dev/voxel/viewer/target/debug/deps/bevy_render_macros-e6c93500943c9693.d: /home/gorto/.cargo/git/checkouts/bevy-50d7e162b728c6c6/ec735b9/crates/bevy_render/macros/src/lib.rs /home/gorto/.cargo/git/checkouts/bevy-50d7e162b728c6c6/ec735b9/crates/bevy_render/macros/src/as_bind_group.rs /home/gorto/.cargo/git/checkouts/bevy-50d7e162b728c6c6/ec735b9/crates/bevy_render/macros/src/extract_component.rs /home/gorto/.cargo/git/checkouts/bevy-50d7e162b728c6c6/ec735b9/crates/bevy_render/macros/src/extract_resource.rs /home/gorto/.cargo/git/checkouts/bevy-50d7e162b728c6c6/ec735b9/crates/bevy_render/macros/src/specializer.rs
+
+/home/gorto/dev/voxel/viewer/target/debug/deps/libbevy_render_macros-e6c93500943c9693.so: /home/gorto/.cargo/git/checkouts/bevy-50d7e162b728c6c6/ec735b9/crates/bevy_render/macros/src/lib.rs /home/gorto/.cargo/git/checkouts/bevy-50d7e162b728c6c6/ec735b9/crates/bevy_render/macros/src/as_bind_group.rs /home/gorto/.cargo/git/checkouts/bevy-50d7e162b728c6c6/ec735b9/crates/bevy_render/macros/src/extract_component.rs /home/gorto/.cargo/git/checkouts/bevy-50d7e162b728c6c6/ec735b9/crates/bevy_render/macros/src/extract_resource.rs /home/gorto/.cargo/git/checkouts/bevy-50d7e162b728c6c6/ec735b9/crates/bevy_render/macros/src/specializer.rs
+
+/home/gorto/.cargo/git/checkouts/bevy-50d7e162b728c6c6/ec735b9/crates/bevy_render/macros/src/lib.rs:
+/home/gorto/.cargo/git/checkouts/bevy-50d7e162b728c6c6/ec735b9/crates/bevy_render/macros/src/as_bind_group.rs:
+/home/gorto/.cargo/git/checkouts/bevy-50d7e162b728c6c6/ec735b9/crates/bevy_render/macros/src/extract_component.rs:
+/home/gorto/.cargo/git/checkouts/bevy-50d7e162b728c6c6/ec735b9/crates/bevy_render/macros/src/extract_resource.rs:
+/home/gorto/.cargo/git/checkouts/bevy-50d7e162b728c6c6/ec735b9/crates/bevy_render/macros/src/specializer.rs:

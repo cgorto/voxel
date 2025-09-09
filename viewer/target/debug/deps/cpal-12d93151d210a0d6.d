@@ -1,0 +1,13 @@
+/home/gorto/dev/voxel/viewer/target/debug/deps/cpal-12d93151d210a0d6.d: /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/lib.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/error.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/mod.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/alsa/mod.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/alsa/enumerate.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/null/mod.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/platform/mod.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/samples_formats.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/traits.rs
+
+/home/gorto/dev/voxel/viewer/target/debug/deps/libcpal-12d93151d210a0d6.rmeta: /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/lib.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/error.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/mod.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/alsa/mod.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/alsa/enumerate.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/null/mod.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/platform/mod.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/samples_formats.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/traits.rs
+
+/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/lib.rs:
+/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/error.rs:
+/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/mod.rs:
+/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/alsa/mod.rs:
+/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/alsa/enumerate.rs:
+/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/null/mod.rs:
+/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/platform/mod.rs:
+/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/samples_formats.rs:
+/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/traits.rs:

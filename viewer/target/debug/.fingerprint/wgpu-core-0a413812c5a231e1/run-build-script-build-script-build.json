@@ -1,0 +1,1 @@
+{"rustc":9882901287480710873,"features":"","declared_features":"","target":0,"profile":0,"path":0,"deps":[[2652692478735771864,"build_script_build",false,11741304834508230483]],"local":[{"Precalculated":"26.0.1"}],"rustflags":["-Clink-arg=-fuse-ld=/usr/bin/mold"],"config":0,"compile_kind":0}

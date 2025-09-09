@@ -1,0 +1,1 @@
+{"rustc":9882901287480710873,"features":"","declared_features":"","target":0,"profile":0,"path":0,"deps":[[9442355480334427104,"build_script_build",false,10054554771493353760]],"local":[{"RerunIfChanged":{"output":"debug/build/winit-b299b01af147ad1f/output","paths":["build.rs"]}}],"rustflags":["-Clink-arg=-fuse-ld=/usr/bin/mold"],"config":0,"compile_kind":0}
