@@ -1,9 +1,0 @@
-/home/gorto/dev/voxel/viewer/target/debug/deps/spacetimedb_bindings_macro-1fa97a330b848caa.d: /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-bindings-macro-1.3.2/src/lib.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-bindings-macro-1.3.2/src/reducer.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-bindings-macro-1.3.2/src/sats.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-bindings-macro-1.3.2/src/table.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-bindings-macro-1.3.2/src/util.rs
-
-/home/gorto/dev/voxel/viewer/target/debug/deps/libspacetimedb_bindings_macro-1fa97a330b848caa.so: /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-bindings-macro-1.3.2/src/lib.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-bindings-macro-1.3.2/src/reducer.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-bindings-macro-1.3.2/src/sats.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-bindings-macro-1.3.2/src/table.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-bindings-macro-1.3.2/src/util.rs
-
-/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-bindings-macro-1.3.2/src/lib.rs:
-/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-bindings-macro-1.3.2/src/reducer.rs:
-/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-bindings-macro-1.3.2/src/sats.rs:
-/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-bindings-macro-1.3.2/src/table.rs:
-/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-bindings-macro-1.3.2/src/util.rs:

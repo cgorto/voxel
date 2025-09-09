@@ -1,9 +1,0 @@
-/home/gorto/dev/voxel/viewer/target/debug/deps/spacetimedb_client_api_messages-d73db7a755d12c58.d: /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-client-api-messages-1.3.2/src/lib.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-client-api-messages-1.3.2/src/energy.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-client-api-messages-1.3.2/src/http.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-client-api-messages-1.3.2/src/name.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-client-api-messages-1.3.2/src/websocket.rs
-
-/home/gorto/dev/voxel/viewer/target/debug/deps/libspacetimedb_client_api_messages-d73db7a755d12c58.rmeta: /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-client-api-messages-1.3.2/src/lib.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-client-api-messages-1.3.2/src/energy.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-client-api-messages-1.3.2/src/http.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-client-api-messages-1.3.2/src/name.rs /home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-client-api-messages-1.3.2/src/websocket.rs
-
-/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-client-api-messages-1.3.2/src/lib.rs:
-/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-client-api-messages-1.3.2/src/energy.rs:
-/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-client-api-messages-1.3.2/src/http.rs:
-/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-client-api-messages-1.3.2/src/name.rs:
-/home/gorto/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spacetimedb-client-api-messages-1.3.2/src/websocket.rs:

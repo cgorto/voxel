@@ -1,1 +1,0 @@
-{"rustc":9882901287480710873,"features":"","declared_features":"","target":0,"profile":0,"path":0,"deps":[[13102401248396471120,"build_script_build",false,4632805094969620656]],"local":[{"RerunIfChanged":{"output":"debug/build/zerocopy-4351d9fe0526c8cc/output","paths":["build.rs","Cargo.toml"]}}],"rustflags":["-Clink-arg=-fuse-ld=/usr/bin/mold"],"config":0,"compile_kind":0}
