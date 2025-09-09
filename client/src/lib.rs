@@ -18,6 +18,7 @@ impl Plugin for AppPlugin {
             DefaultPlugins,
             plugins::camera::VoxelCameraPlugin,
             plugins::processing::ImageProcessingPlugin,
+            plugins::connection::ConnectionPlugin,
         ));
     }
 }
