@@ -2,7 +2,8 @@ use crate::module_bindings::*;
 use crate::prelude::*;
 use bevy::render::{
     extract_resource::ExtractResource,
-    render_resource::{BindGroup, BindGroupLayout, CachedComputePipelineId},
+    render_resource::{BindGroup, BindGroupLayout, CachedComputePipelineId, ShaderType},
+    storage::ShaderStorageBuffer,
 };
 
 #[derive(Resource, Clone, ExtractResource)]
@@ -30,7 +31,34 @@ pub struct ProcessingPipeline {
 pub struct ProcessingBindGroup(pub [BindGroup; 2]);
 
 #[derive(Resource, ExtractResource, Clone)]
-pub struct VoxelGridTexture(pub Handle<Image>);
+pub struct VoxelHitBuffer(pub [Handle<ShaderStorageBuffer>; 2]);
+
+#[derive(ShaderType, Clone, Copy, Debug)]
+pub struct VoxelHit {
+    pub pos_idx: u32,
+    pub value: f32,
+}
+impl Default for VoxelHit {
+    fn default() -> Self {
+        VoxelHit {
+            pos_idx: u32::MAX,
+            value: -50.0,
+        }
+    }
+}
+impl VoxelHit {
+    pub fn voxel(&self, grid_size: u32) -> UVec3 {
+        let z = self.pos_idx / (grid_size * grid_size);
+        let rem = self.pos_idx % (grid_size * grid_size);
+        let y = rem / grid_size;
+        let x = rem % grid_size;
+
+        UVec3 { x, y, z }
+    }
+    pub fn id_from_pos(&mut self, grid_size: u32, voxel: UVec3) {
+        self.pos_idx = (voxel.x + voxel.y * grid_size + voxel.z * grid_size * grid_size) as u32
+    }
+}
 
 #[derive(Resource, Default, ExtractResource, Clone)]
 pub struct FrameInfo {

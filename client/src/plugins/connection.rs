@@ -23,7 +23,6 @@ pub fn send_voxel_update(
 ) {
     if let Some(stdb) = stdb {
         for event in events.read() {
-            info!("yay :D");
             stdb.reducers()
                 .update_voxel(event.voxel.clone(), event.value);
         }

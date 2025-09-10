@@ -5,7 +5,8 @@
 
 @group(1) @binding(0) var difference: texture_storage_2d<rgba8unorm, read_write>;
 @group(1) @binding(1) var<uniform> u: RaymarchUniforms;
-@group(1) @binding(2) var voxel_grid: texture_storage_3d<r32float, read_write>;
+@group(1) @binding(2) var<storage, read_write> counter: atomic<u32>;
+@group(1) @binding(3) var<storage, read_write> hits: Hits;
 
 struct RaymarchUniforms {
     camera_pos: vec3<f32>,
@@ -18,6 +19,17 @@ struct RaymarchUniforms {
     changed_threshold: f32,
 }
 
+struct VoxelHit {
+    pos_idx: u32,
+    value: f32,
+}
+struct Hits {
+    items: array<VoxelHit>,
+}
+
+fn voxel_to_id(grid_size: u32, voxel: vec3<u32>) -> u32 {
+    return (voxel.x + voxel.y * grid_size + voxel.z * grid_size * grid_size);
+}
 
 
 @compute @workgroup_size(8,8,1)
@@ -45,6 +57,11 @@ fn safe_div(a: f32, b:f32) -> f32 {
     return a / b;
 }
 
+fn record_hit(ix: i32, iy: i32, iz: i32, diff: f32, grid_size: u32) {
+    let index = atomicAdd(&counter, 1u);
+    let voxel_pos = voxel_to_id(grid_size,vec3<u32>(u32(ix), u32(iy), u32(iz)));
+    hits.items[index] = VoxelHit(voxel_pos, diff);
+}
 
 fn cast_ray_into_grid(
     camera_pos: vec3<f32>,
@@ -120,12 +137,11 @@ fn cast_ray_into_grid(
     let t_delta_z = safe_div(voxel_size, abs(dir.z));
 
     var t_current = t_min;
-
+// define max steps here!
     while(t_current <=t_max && step_count < 64) {
         
         let voxel_coord = vec3<i32>(ix,iy,iz);
-        let current_val = textureLoad(voxel_grid, voxel_coord).r;
-        textureStore(voxel_grid,voxel_coord, vec4<f32>(current_val+diff, 0.0,0.0,1.0));
+        record_hit(ix, iy, iz, diff, u32(u.voxel_n));
 
         if (t_max_x < t_max_y && t_max_x < t_max_z) {
             ix += step_x;

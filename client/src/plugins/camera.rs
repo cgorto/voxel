@@ -1,9 +1,7 @@
 use crate::prelude::*;
 use bevy::{
     asset::RenderAssetUsages,
-    render::render_resource::{
-        Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
-    },
+    render::render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
 };
 use nokhwa::{pixel_format::RgbAFormat, utils::RequestedFormat, *};
 pub struct VoxelCameraPlugin;

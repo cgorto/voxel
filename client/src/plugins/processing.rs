@@ -10,16 +10,16 @@ use bevy::{
         render_graph::{self, Node, RenderGraph, RenderLabel},
         render_resource::{
             BindGroupLayoutEntries, PipelineCache, ShaderStages,
-            binding_types::{texture_storage_2d, texture_storage_3d, uniform_buffer},
+            binding_types::{storage_buffer, texture_storage_2d, uniform_buffer},
             *,
         },
         renderer::{RenderDevice, RenderQueue},
+        storage::{GpuShaderStorageBuffer, ShaderStorageBuffer},
         texture::GpuImage,
     },
 };
-use bevy_spacetimedb::*;
 
-use crate::module_bindings::{update_voxel_reducer::update_voxel, voxel_type::Voxel};
+use crate::module_bindings::voxel_type::Voxel;
 use crate::prelude::*;
 
 pub struct ImageProcessingPlugin;
@@ -36,7 +36,7 @@ impl Plugin for ImageProcessingPlugin {
             ExtractResourcePlugin::<DisplayTexture>::default(),
             ExtractResourcePlugin::<FrameInfo>::default(),
             ExtractResourcePlugin::<VoxelInfo>::default(),
-            ExtractResourcePlugin::<VoxelGridTexture>::default(),
+            ExtractResourcePlugin::<VoxelHitBuffer>::default(),
         ))
         .add_systems(Startup, setup)
         .add_event::<VoxelHitEvent>();
@@ -52,56 +52,47 @@ impl Plugin for ImageProcessingPlugin {
         render_graph.add_node_edge(ProcessingLabel, bevy::render::graph::CameraDriverLabel);
     }
 }
-
+const MAX_RAYMARCH_STEPS: u32 = 64;
 const TEST_VOXEL_SIZE: u32 = 10;
-const PADDED_WIDTH: usize = 64;
-fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
-    let size = Extent3d {
-        width: TEST_VOXEL_SIZE,
-        height: TEST_VOXEL_SIZE,
-        depth_or_array_layers: TEST_VOXEL_SIZE,
-    };
-
-    let mut image = Image::new_uninit(
-        size,
-        TextureDimension::D3,
-        TextureFormat::R32Float,
-        RenderAssetUsages::RENDER_WORLD,
-    );
-    image.texture_descriptor.usage |= TextureUsages::COPY_SRC | TextureUsages::STORAGE_BINDING;
-    let image = images.add(image);
-
-    commands.insert_resource(VoxelGridTexture(image.clone()));
+fn setup(mut commands: Commands, mut buffers: ResMut<Assets<ShaderStorageBuffer>>) {
+    let buffer_size = 1000 * 1000 * 64; //placeholder, you'd take image size for worst case scenario ()
+    let buffer = vec![VoxelHit::default(); buffer_size];
+    let mut buffer = ShaderStorageBuffer::from(buffer);
+    let mut counter = ShaderStorageBuffer::from(0u32);
+    counter.buffer_description.usage |= BufferUsages::COPY_SRC;
+    buffer.buffer_description.usage |= BufferUsages::COPY_SRC;
+    let buffer = buffers.add(buffer);
+    let counter = buffers.add(counter);
     commands
-        .spawn(Readback::texture(image.clone()))
+        .spawn(Readback::buffer(buffer.clone()))
         .observe(on_voxel_readback);
+    //add readback here!
+    commands.insert_resource(VoxelHitBuffer([buffer, counter]));
     info!("set up");
 }
 
 pub fn on_voxel_readback(trigger: On<ReadbackComplete>, mut events: EventWriter<VoxelHitEvent>) {
-    let diff: Vec<f32> = trigger.event().to_shader_type();
-
-    let width = TEST_VOXEL_SIZE as usize;
-    let height = TEST_VOXEL_SIZE as usize;
-    let depth = TEST_VOXEL_SIZE as usize;
-
-    for z in 0..depth {
-        for y in 0..height {
-            for x in 0..width {
-                let index = z * (height * PADDED_WIDTH) + y * PADDED_WIDTH + x;
-                let f = diff[index];
-                if f > 0.0 {
-                    info!("voxel ({}, {}, {}) = {}", x, y, z, f);
-                    let voxel = Voxel {
-                        x: x as u32,
-                        y: y as u32,
-                        z: z as u32,
-                    };
-                    events.write(VoxelHitEvent { voxel, value: f });
-                }
-            }
+    let hits: Vec<VoxelHit> = trigger.event().to_shader_type();
+    let mut counter = 0u32;
+    for hit in hits {
+        if hit.value < 0.0 || hit.pos_idx == u32::MAX {
+            info!("count: {}", counter );
+            return;
+        }
+        if hit.value > f32::EPSILON {
+            let pos = hit.voxel(TEST_VOXEL_SIZE);
+            let voxel = Voxel {
+                x: pos.x,
+                y: pos.y,
+                z: pos.z,
+            };
+            info!("value: {}", hit.value);
+            let value = hit.value;
+            events.write(VoxelHitEvent { voxel, value });
+            counter += 1;
         }
     }
+    info!("total count: {}", counter);
 }
 
 fn init_processing_pipeline(
@@ -128,7 +119,8 @@ fn init_processing_pipeline(
             (
                 texture_storage_2d(TextureFormat::Rgba8Unorm, StorageTextureAccess::ReadWrite),
                 uniform_buffer::<RaymarchUniforms>(false),
-                texture_storage_3d(TextureFormat::R32Float, StorageTextureAccess::ReadWrite),
+                storage_buffer::<u32>(false),
+                storage_buffer::<VoxelHit>(false),
             ),
         ),
     );
@@ -176,16 +168,16 @@ fn prepare_bind_group(
     gpu_images: Res<RenderAssets<GpuImage>>,
     camera_images: Res<CameraTextures>,
     display_texture: Res<DisplayTexture>,
-    voxel_grid: Res<VoxelGridTexture>,
     voxel_info: Res<VoxelInfo>,
     frame_info: Res<FrameInfo>,
     render_device: Res<RenderDevice>,
     queue: Res<RenderQueue>,
+    buffer: Res<VoxelHitBuffer>,
+    buffers: Res<RenderAssets<GpuShaderStorageBuffer>>,
 ) {
     let current = gpu_images.get(&camera_images.current).unwrap();
     let prev = gpu_images.get(&camera_images.prev).unwrap();
     let target = gpu_images.get(&display_texture.handle).unwrap();
-    let voxel = gpu_images.get(&voxel_grid.0).unwrap();
 
     let bind_group_0 = render_device.create_bind_group(
         None,
@@ -217,11 +209,26 @@ fn prepare_bind_group(
         focal_length,
         changed_threshold: 0.05,
     });
+    // let hit_buffer = buffers.get(&buffer.0[0]).unwrap();
+    let mut counter = StorageBuffer::from(0u32);
+    counter.write_buffer(&render_device, &queue);
+
+    let buffer_size = 1000 * 1000 * 64; //placeholder, you'd take image size for worst case scenario ()
+    let hit_buffer_array = vec![VoxelHit::default(); buffer_size];
+    let mut hit_buffer = StorageBuffer::from(hit_buffer_array);
+    hit_buffer.write_buffer(&render_device, &queue);
+
     uniform_buffer.write_buffer(&render_device, &queue);
     let bind_group_1 = render_device.create_bind_group(
         None,
         &pipeline.raymarch_bind_group_layout,
-        &BindGroupEntries::sequential((&target.texture_view, &uniform_buffer, &voxel.texture_view)),
+        &BindGroupEntries::sequential((
+            &target.texture_view,
+            &uniform_buffer,
+            &counter,
+            &hit_buffer,
+            // hit_buffer.buffer.as_entire_buffer_binding(),
+        )),
     );
     commands.insert_resource(ProcessingBindGroup([bind_group_0, bind_group_1]));
 }

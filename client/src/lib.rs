@@ -7,7 +7,7 @@ mod resources;
 
 mod prelude {
     pub use super::*;
-    pub use {components::*, plugins::*, resources::*};
+    pub use resources::*;
 }
 
 pub struct AppPlugin;
