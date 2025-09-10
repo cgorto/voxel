@@ -31,3 +31,11 @@ fn on_voxel_grid_inserted(mut commands: Commands, mut events: ReadInsertEvent<Vo
         }
     }
 }
+
+fn on_voxel_grid_updated(mut commands: Commands, mut events: ReadUpdateEvent<VoxelGrid>) {
+    for event in events.read() {
+        for value in event.row.grid {
+            
+        }
+    }
+}

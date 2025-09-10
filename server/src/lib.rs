@@ -7,8 +7,16 @@ pub struct Voxel {
     z: u32,
 }
 impl Voxel {
-    pub fn idx(&self, grid_size: u32) -> usize {
-        (self.x + self.y * grid_size + self.z * grid_size * grid_size) as usize
+    pub fn idx(&self, grid_size: u32) -> u32 {
+        (self.x + self.y * grid_size + self.z * grid_size * grid_size) as u32
+    }
+    pub fn from_idx(idx: u32, grid_size: u32) -> Self {
+        let z = idx / (grid_size * grid_size);
+        let rem = idx % (grid_size * grid_size);
+        let y = rem / grid_size;
+        let x = rem % grid_size;
+
+        Voxel { x, y, z }
     }
 }
 
@@ -22,14 +30,17 @@ pub struct VoxelGrid {
     pub grid: Vec<f32>,
 }
 
+#[table(name = voxel_entry, public)]
+pub struct VoxelEntry {
+    #[primary_key]
+    #[auto_inc]
+    #[index(btree)]
+    pub id: u32,
+    pub value: f32,
+}
+
 #[spacetimedb::reducer(init)]
 pub fn init(ctx: &ReducerContext) -> Result<(), String> {
-    let new_grid = vec![0.0; (GRID_SIZE * GRID_SIZE * GRID_SIZE)];
-    ctx.db.voxel_grid().try_insert(VoxelGrid {
-        id: 0,
-        voxel_size: 1.0,
-        grid: new_grid,
-    })?;
     Ok(())
 }
 
@@ -47,11 +58,10 @@ pub fn identity_disconnected(_ctx: &ReducerContext) {
 pub fn update_voxel(ctx: &ReducerContext, voxel: Voxel, value: f32) -> Result<(), String> {
     log::info!("voxel update");
     let idx = voxel.idx(GRID_SIZE.try_into().unwrap());
-    for mut grid in ctx.db.voxel_grid().iter() {
-        if idx < grid.grid.len().try_into().unwrap() {
-            grid.grid[idx] = value;
-            ctx.db.voxel_grid().id().update(grid);
-        }
+    if let Some(mut entry) = ctx.db.voxel_entry().id().find(idx) {
+        entry.value += value //THIS **WILL NOT** WORK WITH MULTIPLE CLIENTS
+    } else {
     }
+
     Ok(())
 }
