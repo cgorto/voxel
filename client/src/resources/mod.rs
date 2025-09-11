@@ -22,13 +22,13 @@ pub struct DisplayTexture {
 #[derive(Resource)]
 pub struct ProcessingPipeline {
     pub texture_bind_group_layout: BindGroupLayout,
-    pub raymarch_bind_group_layout: BindGroupLayout,
+    // pub raymarch_bind_group_layout: BindGroupLayout,
     pub diff_pipeline: CachedComputePipelineId,
-    pub raymarch_pipeline: CachedComputePipelineId,
+    // pub raymarch_pipeline: CachedComputePipelineId,
 }
 
 #[derive(Resource)]
-pub struct ProcessingBindGroup(pub [BindGroup; 2]);
+pub struct ProcessingBindGroup(pub BindGroup);
 
 #[derive(Resource, ExtractResource, Clone)]
 pub struct VoxelHitBuffer(pub [Handle<ShaderStorageBuffer>; 2]);
@@ -80,4 +80,10 @@ pub struct VoxelInfo {
 pub struct VoxelHitEvent {
     pub voxel: Voxel,
     pub value: f32,
+}
+
+#[derive(Event, BufferedEvent)]
+pub struct RaycastEvent {
+    pub pixel: IVec2,
+    pub diff: f32,
 }

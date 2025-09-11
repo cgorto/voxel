@@ -20,6 +20,13 @@ impl Voxel {
     }
 }
 
+#[derive(SpacetimeType)]
+pub struct dbVec3 {
+    x: f32,
+    y: f32,
+    z: f32,
+}
+
 const GRID_SIZE: usize = 100;
 #[table(name = voxel_grid, public)]
 pub struct VoxelGrid {
@@ -28,6 +35,19 @@ pub struct VoxelGrid {
     pub id: u32,
     pub voxel_size: f32,
     pub grid: Vec<f32>,
+}
+
+#[table(name = camera, public)]
+pub struct Camera {
+    #[primary_key]
+    identity: Identity,
+    #[auto_inc]
+    camera_id: u32,
+    position: dbVec3,
+    pitch: f32,
+    roll: f32,
+    yaw: f32,
+    fov: f32,
 }
 
 #[table(name = voxel_entry, public)]
@@ -63,5 +83,26 @@ pub fn update_voxel(ctx: &ReducerContext, voxel: Voxel, value: f32) -> Result<()
     } else {
     }
 
+    Ok(())
+}
+
+#[reducer]
+pub fn update_camera_data(
+    ctx: &ReducerContext,
+    posx: f32,
+    posy: f32,
+    posz: f32,
+    roll: f32,
+    pitch: f32,
+    yaw: f32,
+    fov: f32,
+) -> Result<(), String> {
+    log::info!("new camera");
+    Ok(())
+}
+
+#[reducer]
+pub fn update_ray(ctx: &ReducerContext, pxx: i32, pxy: i32, diff: f32) -> Result<(), String> {
+    log::info!("casting ray from pixel: {}, {} value: {}", pxx, pxy, diff);
     Ok(())
 }

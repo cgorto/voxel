@@ -12,19 +12,19 @@ impl Plugin for ConnectionPlugin {
                 .with_uri(HOST)
                 .with_module_name(DB_NAME)
                 .with_run_fn(DbConnection::run_threaded),
-        )
-        .add_systems(Update, send_voxel_update);
+        );
+        // .add_systems(Update, send_voxel_update);
     }
 }
 
-pub fn send_voxel_update(
-    mut events: EventReader<VoxelHitEvent>,
+pub fn send_raycast_update(
+    mut events: EventReader<RaycastEvent>,
     stdb: Option<Res<StdbConnection<DbConnection>>>,
 ) {
     if let Some(stdb) = stdb {
         for event in events.read() {
             stdb.reducers()
-                .update_voxel(event.voxel.clone(), event.value);
+                .update_ray(event.pixel.x, event.pixel.y, event.diff);
         }
     }
 }

@@ -33,10 +33,10 @@ impl Plugin for ImageProcessingPlugin {
             ExtractResourcePlugin::<DisplayTexture>::default(),
             ExtractResourcePlugin::<FrameInfo>::default(),
             ExtractResourcePlugin::<VoxelInfo>::default(),
-            ExtractResourcePlugin::<VoxelHitBuffer>::default(),
-        ))
-        .add_systems(Startup, setup)
-        .add_event::<VoxelHitEvent>();
+            // ExtractResourcePlugin::<VoxelHitBuffer>::default(),
+        ));
+        // .add_systems(Startup, setup)
+        // .add_event::<VoxelHitEvent>();
         let render_app = app.sub_app_mut(RenderApp);
         render_app
             .add_systems(RenderStartup, init_processing_pipeline)
@@ -52,20 +52,29 @@ impl Plugin for ImageProcessingPlugin {
 const MAX_RAYMARCH_STEPS: u32 = 64;
 const TEST_VOXEL_SIZE: u32 = 10;
 fn setup(mut commands: Commands, mut buffers: ResMut<Assets<ShaderStorageBuffer>>) {
-    let buffer_size = 1000 * 1000 * 64; //placeholder, you'd take image size for worst case scenario ()
-    let buffer = vec![VoxelHit::default(); buffer_size];
-    let mut buffer = ShaderStorageBuffer::from(buffer);
-    let mut counter = ShaderStorageBuffer::from(0u32);
-    counter.buffer_description.usage |= BufferUsages::COPY_SRC;
-    buffer.buffer_description.usage |= BufferUsages::COPY_SRC;
-    let buffer = buffers.add(buffer);
-    let counter = buffers.add(counter);
-    commands
-        .spawn(Readback::buffer(buffer.clone()))
-        .observe(on_voxel_readback);
+    // let buffer_size = 1000 * 1000 * 64; //placeholder, you'd take image size for worst case scenario ()
+    // let buffer = vec![VoxelHit::default(); buffer_size];
+    // let mut buffer = ShaderStorageBuffer::from(buffer);
+    // let mut counter = ShaderStorageBuffer::from(0u32);
+    // counter.buffer_description.usage |= BufferUsages::COPY_SRC;
+    // buffer.buffer_description.usage |= BufferUsages::COPY_SRC;
+    // let buffer = buffers.add(buffer);
+    // let counter = buffers.add(counter);
+    // commands
+    // .spawn(Readback::buffer(buffer.clone()))
+    // .observe(on_voxel_readback);
     //add readback here!
-    commands.insert_resource(VoxelHitBuffer([buffer, counter]));
+    // commands.insert_resource(VoxelHitBuffer([buffer, counter]));
     info!("set up");
+}
+
+pub fn on_pixel_readback(trigger: On<ReadbackComplete>, mut events: EventWriter<RaycastEvent>) {
+    let pixels: Vec<f32> = trigger.event().to_shader_type();
+    for pixel in pixels {
+        if pixel >= 0.0 {
+            info!("diff: {}", pixel);
+        }
+    }
 }
 
 pub fn on_voxel_readback(trigger: On<ReadbackComplete>, mut events: EventWriter<VoxelHitEvent>) {
@@ -105,22 +114,22 @@ fn init_processing_pipeline(
             (
                 texture_storage_2d(TextureFormat::Rgba8Unorm, StorageTextureAccess::ReadOnly),
                 texture_storage_2d(TextureFormat::Rgba8Unorm, StorageTextureAccess::ReadOnly),
-                texture_storage_2d(TextureFormat::Rgba8Unorm, StorageTextureAccess::ReadWrite),
+                texture_storage_2d(TextureFormat::R8Unorm, StorageTextureAccess::ReadWrite),
             ),
         ),
     );
-    let raymarch_bind_group_layout = render_device.create_bind_group_layout(
-        "Raymarch",
-        &BindGroupLayoutEntries::sequential(
-            ShaderStages::COMPUTE,
-            (
-                texture_storage_2d(TextureFormat::Rgba8Unorm, StorageTextureAccess::ReadWrite),
-                uniform_buffer::<RaymarchUniforms>(false),
-                storage_buffer::<u32>(false),
-                storage_buffer::<VoxelHit>(false),
-            ),
-        ),
-    );
+    // let raymarch_bind_group_layout = render_device.create_bind_group_layout(
+    //     "Raymarch",
+    //     &BindGroupLayoutEntries::sequential(
+    //         ShaderStages::COMPUTE,
+    //         (
+    //             texture_storage_2d(TextureFormat::Rgba8Unorm, StorageTextureAccess::ReadWrite),
+    //             uniform_buffer::<RaymarchUniforms>(false),
+    //             storage_buffer::<u32>(false),
+    //             storage_buffer::<VoxelHit>(false),
+    //         ),
+    //     ),
+    // );
     let shader = asset_server.load(SHADER_ASSET_PATH);
     let diff_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
         layout: vec![texture_bind_group_layout.clone()],
@@ -129,22 +138,22 @@ fn init_processing_pipeline(
         zero_initialize_workgroup_memory: true,
         ..default()
     });
-    let raymarch_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
-        layout: vec![
-            texture_bind_group_layout.clone(),
-            raymarch_bind_group_layout.clone(),
-        ],
-        shader: shader.clone(),
-        entry_point: Some(Cow::from("raymarch")),
-        zero_initialize_workgroup_memory: true,
-        ..default()
-    });
+    // let raymarch_pipeline = pipeline_cache.queue_compute_pipeline(ComputePipelineDescriptor {
+    //     layout: vec![
+    //         texture_bind_group_layout.clone(),
+    //         raymarch_bind_group_layout.clone(),
+    //     ],
+    //     shader: shader.clone(),
+    //     entry_point: Some(Cow::from("raymarch")),
+    //     zero_initialize_workgroup_memory: true,
+    //     ..default()
+    // });
 
     commands.insert_resource(ProcessingPipeline {
         texture_bind_group_layout,
         diff_pipeline,
-        raymarch_bind_group_layout,
-        raymarch_pipeline,
+        // raymarch_bind_group_layout,
+        // raymarch_pipeline,
     });
 }
 
@@ -165,11 +174,11 @@ fn prepare_bind_group(
     gpu_images: Res<RenderAssets<GpuImage>>,
     camera_images: Res<CameraTextures>,
     display_texture: Res<DisplayTexture>,
-    voxel_info: Res<VoxelInfo>,
+    // voxel_info: Res<VoxelInfo>,
     frame_info: Res<FrameInfo>,
     render_device: Res<RenderDevice>,
     queue: Res<RenderQueue>,
-    buffer: Res<VoxelHitBuffer>,
+    // buffer: Res<VoxelHitBuffer>,
     buffers: Res<RenderAssets<GpuShaderStorageBuffer>>,
 ) {
     let current = gpu_images.get(&camera_images.current).unwrap();
@@ -191,43 +200,43 @@ fn prepare_bind_group(
         x: screen_size.x as f32,
         y: screen_size.y as f32,
     };
-    let mut uniform_buffer = UniformBuffer::from(RaymarchUniforms {
-        camera_pos: frame_info.camera_position,
-        camera_rotation: Mat3::from_euler(
-            EulerRot::YXZ,
-            frame_info.yaw,
-            frame_info.pitch,
-            frame_info.roll,
-        ),
-        screen_size: size,
-        grid_center: voxel_info.grid_center,
-        voxel_n: voxel_info.n as i32,
-        voxel_size: voxel_info.voxel_size,
-        focal_length,
-        changed_threshold: 0.05,
-    });
+    // let mut uniform_buffer = UniformBuffer::from(RaymarchUniforms {
+    //     camera_pos: frame_info.camera_position,
+    //     camera_rotation: Mat3::from_euler(
+    //         EulerRot::YXZ,
+    //         frame_info.yaw,
+    //         frame_info.pitch,
+    //         frame_info.roll,
+    //     ),
+    //     screen_size: size,
+    //     grid_center: voxel_info.grid_center,
+    //     voxel_n: voxel_info.n as i32,
+    //     voxel_size: voxel_info.voxel_size,
+    //     focal_length,
+    //     changed_threshold: 0.05,
+    // });
     // let hit_buffer = buffers.get(&buffer.0[0]).unwrap();
-    let mut counter = StorageBuffer::from(0u32);
-    counter.write_buffer(&render_device, &queue);
+    // let mut counter = StorageBuffer::from(0u32);
+    // counter.write_buffer(&render_device, &queue);
 
-    let buffer_size = 1000 * 1000 * 64; //placeholder, you'd take image size for worst case scenario ()
-    let hit_buffer_array = vec![VoxelHit::default(); buffer_size];
-    let mut hit_buffer = StorageBuffer::from(hit_buffer_array);
-    hit_buffer.write_buffer(&render_device, &queue);
+    // let buffer_size = 1000 * 1000 * 64; //placeholder, you'd take image size for worst case scenario ()
+    // let hit_buffer_array = vec![VoxelHit::default(); buffer_size];
+    // let mut hit_buffer = StorageBuffer::from(hit_buffer_array);
+    // hit_buffer.write_buffer(&render_device, &queue);
 
-    uniform_buffer.write_buffer(&render_device, &queue);
-    let bind_group_1 = render_device.create_bind_group(
-        None,
-        &pipeline.raymarch_bind_group_layout,
-        &BindGroupEntries::sequential((
-            &target.texture_view,
-            &uniform_buffer,
-            &counter,
-            &hit_buffer,
-            // hit_buffer.buffer.as_entire_buffer_binding(),
-        )),
-    );
-    commands.insert_resource(ProcessingBindGroup([bind_group_0, bind_group_1]));
+    // uniform_buffer.write_buffer(&render_device, &queue);
+    // let bind_group_1 = render_device.create_bind_group(
+    //     None,
+    //     &pipeline.raymarch_bind_group_layout,
+    //     &BindGroupEntries::sequential((
+    //         &target.texture_view,
+    //         &uniform_buffer,
+    //         &counter,
+    //         &hit_buffer,
+    //         // hit_buffer.buffer.as_entire_buffer_binding(),
+    //     )),
+    // );
+    commands.insert_resource(ProcessingBindGroup(bind_group_0));
 }
 
 enum ProcessingState {
@@ -255,11 +264,7 @@ impl Node for ProcessingNode {
             ProcessingState::Loading => {
                 match pipeline_cache.get_compute_pipeline_state(pipeline.diff_pipeline) {
                     CachedPipelineState::Ok(_) => {
-                        match pipeline_cache.get_compute_pipeline_state(pipeline.raymarch_pipeline)
-                        {
-                            CachedPipelineState::Ok(_) => self.state = ProcessingState::Init,
-                            _ => {}
-                        }
+                        self.state = ProcessingState::Init;
                     }
                     CachedPipelineState::Err(
                         bevy::shader::PipelineCacheError::ShaderNotLoaded(_),
@@ -297,19 +302,8 @@ impl Node for ProcessingNode {
                 let pipe = pipeline_cache
                     .get_compute_pipeline(pipeline.diff_pipeline)
                     .unwrap();
-                let pipe2 = pipeline_cache
-                    .get_compute_pipeline(pipeline.raymarch_pipeline)
-                    .unwrap();
-                pass.set_bind_group(0, &bind_group[0], &[]);
-                pass.set_bind_group(1, &bind_group[1], &[]);
+                pass.set_bind_group(0, bind_group, &[]);
                 pass.set_pipeline(pipe);
-                pass.dispatch_workgroups(
-                    images.size.x as u32 / WORKGROUP_SIZE,
-                    images.size.y as u32 / WORKGROUP_SIZE,
-                    1,
-                );
-                pass.set_pipeline(pipe2);
-
                 pass.dispatch_workgroups(
                     images.size.x as u32 / WORKGROUP_SIZE,
                     images.size.y as u32 / WORKGROUP_SIZE,

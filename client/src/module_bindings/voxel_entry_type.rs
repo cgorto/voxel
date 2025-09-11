@@ -8,12 +8,11 @@ use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
 #[derive(__lib::ser::Serialize, __lib::de::Deserialize, Clone, PartialEq, Debug)]
 #[sats(crate = __lib)]
-pub struct Voxel {
-    pub x: u32,
-    pub y: u32,
-    pub z: u32,
+pub struct VoxelEntry {
+    pub id: u32,
+    pub value: f32,
 }
 
-impl __sdk::InModule for Voxel {
+impl __sdk::InModule for VoxelEntry {
     type Module = super::RemoteModule;
 }

@@ -1,7 +1,10 @@
 use crate::prelude::*;
 use bevy::{
     asset::RenderAssetUsages,
-    render::render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
+    render::{
+        gpu_readback::{Readback, ReadbackComplete},
+        render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
+    },
 };
 use nokhwa::{pixel_format::RgbAFormat, utils::RequestedFormat, *};
 pub struct VoxelCameraPlugin;
@@ -31,7 +34,8 @@ impl Plugin for VoxelCameraPlugin {
                 voxel_size: 1.0,
                 grid_center: vec3(5.0, 5.0, 5.0),
             })
-            .insert_resource(Time::<Fixed>::from_hz(fps));
+            .insert_resource(Time::<Fixed>::from_hz(fps))
+            .add_event::<RaycastEvent>();
     }
 }
 
@@ -62,7 +66,22 @@ pub fn setup(
         | TextureUsages::STORAGE_BINDING;
     let prev = images.add(image.clone());
     let current = images.add(image.clone());
+
+    let mut image = Image::new(
+        texture_size,
+        TextureDimension::D2,
+        vec![0u8; (texture_size.width * texture_size.height) as usize],
+        TextureFormat::R8Unorm,
+        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+    );
+    image.texture_descriptor.usage |= TextureUsages::COPY_DST
+        | TextureUsages::TEXTURE_BINDING
+        | TextureUsages::RENDER_ATTACHMENT
+        | TextureUsages::STORAGE_BINDING
+        | TextureUsages::COPY_SRC;
+
     let display = images.add(image);
+
     commands.insert_resource(CameraTextures {
         current: current.clone(),
         prev: prev.clone(),
@@ -72,12 +91,24 @@ pub fn setup(
     commands.insert_resource(DisplayTexture {
         handle: display.clone(),
     });
-
+    commands
+        .spawn(Readback::texture(display.clone()))
+        .observe(on_pixel_readback);
     commands.spawn(Sprite {
         image: display.clone(),
         custom_size: Some(vec2(texture_size.width as f32, texture_size.height as f32)),
         ..default()
     });
+}
+
+pub fn on_pixel_readback(trigger: On<ReadbackComplete>, mut events: EventWriter<RaycastEvent>) {
+    let pixels: Vec<u8> = trigger.event().to_vec();
+    for pixel in pixels {
+        let pixel: f32 = pixel as f32;
+        if pixel > 0.0 {
+            info!("diff: {}", pixel);
+        }
+    }
 }
 
 pub fn new_frame_reset(mut cam_text: ResMut<CameraTextures>) {
