@@ -1,0 +1,8 @@
+[package]
+name = "lite_client"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nokhwa = {version = "0.10.9", features = ["output-wgpu"]}
+wgpu = "23.0.1"
