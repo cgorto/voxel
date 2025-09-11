@@ -1,22 +1,19 @@
 use std::borrow::Cow;
 
-use bevy::{
-    asset::RenderAssetUsages,
-    render::{
-        Render, RenderApp, RenderStartup, RenderSystems,
-        extract_resource::ExtractResourcePlugin,
-        gpu_readback::{Readback, ReadbackComplete},
-        render_asset::RenderAssets,
-        render_graph::{self, Node, RenderGraph, RenderLabel},
-        render_resource::{
-            BindGroupLayoutEntries, PipelineCache, ShaderStages,
-            binding_types::{storage_buffer, texture_storage_2d, uniform_buffer},
-            *,
-        },
-        renderer::{RenderDevice, RenderQueue},
-        storage::{GpuShaderStorageBuffer, ShaderStorageBuffer},
-        texture::GpuImage,
+use bevy::render::{
+    Render, RenderApp, RenderStartup, RenderSystems,
+    extract_resource::ExtractResourcePlugin,
+    gpu_readback::{Readback, ReadbackComplete},
+    render_asset::RenderAssets,
+    render_graph::{self, Node, RenderGraph, RenderLabel},
+    render_resource::{
+        BindGroupLayoutEntries, PipelineCache, ShaderStages,
+        binding_types::{storage_buffer, texture_storage_2d, uniform_buffer},
+        *,
     },
+    renderer::{RenderDevice, RenderQueue},
+    storage::{GpuShaderStorageBuffer, ShaderStorageBuffer},
+    texture::GpuImage,
 };
 
 use crate::module_bindings::voxel_type::Voxel;
@@ -76,7 +73,7 @@ pub fn on_voxel_readback(trigger: On<ReadbackComplete>, mut events: EventWriter<
     let mut counter = 0u32;
     for hit in hits {
         if hit.value < 0.0 || hit.pos_idx == u32::MAX {
-            info!("count: {}", counter );
+            info!("count: {}", counter);
             return;
         }
         if hit.value > f32::EPSILON {
