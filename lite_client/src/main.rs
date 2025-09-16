@@ -1,19 +1,25 @@
+use bytemuck::bytes_of;
 use nokhwa::{
     pixel_format::RgbAFormat,
     utils::{CameraIndex, RequestedFormat},
     *,
 };
 use wgpu::{
-    Adapter, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor,
+    BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor,
     BindGroupLayoutEntry, BindingResource, Buffer, BufferBinding, BufferDescriptor, BufferUsages,
-    CommandEncoderDescriptor, ComputePipeline, Device, ImageCopyTextureBase, Instance,
-    PipelineCompilationOptions, PipelineLayoutDescriptor, Queue, RenderPipelineDescriptor,
-    ShaderStages, StorageTextureAccess, Texture, TextureDimension, TextureFormat, TextureUsages,
-    TextureViewDescriptor, TextureViewDimension, VertexState, include_wgsl, util::DeviceExt,
+    CommandEncoderDescriptor, ComputePipeline, Device, Extent3d, ImageCopyTextureBase, Instance,
+    PipelineLayoutDescriptor, Queue, ShaderStages, StorageTextureAccess, Texture, TextureDimension,
+    TextureFormat, TextureUsages, TextureViewDescriptor, TextureViewDimension, include_wgsl,
+};
+use winit::{
+    event::*,
+    event_loop::{ControlFlow, EventLoop},
+    window::*,
 };
 
 fn main() {
-    println!("Hello, world!");
+    let event_loop = EventLoop::new().unwrap();
+    event_loop.set_control_flow(ControlFlow::Poll);
 }
 
 struct Vec3 {
@@ -24,7 +30,6 @@ struct Vec3 {
 
 struct RenderState {
     pub cam: Camera,
-    pub fps: u32,
     pub device: Device,
     pub queue: Queue,
     pub diff_bind_group: BindGroup,
@@ -32,6 +37,11 @@ struct RenderState {
     pub ray_bind_group: BindGroup,
     pub ray_pipeline: ComputePipeline,
     pub voxel_info: VoxelInfo,
+    pub counter: Buffer,
+    pub hit_buffer: Buffer,
+    pub readback_buffer: Buffer,
+    pub counter_readback: Buffer,
+    pub size: Extent3d,
 }
 
 struct VoxelInfo {
@@ -40,11 +50,15 @@ struct VoxelInfo {
     n: u32,
 }
 
-struct VoxelHit {
+#[repr(C)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct VoxelHit {
     pub voxel_id: u32, //x + y * N + z * N * N
     pub value: f32,
 }
 
+struct RaymarchUniforms {}
+const MAX_RAYMARCH_STEPS: u32 = 64;
 impl RenderState {
     async fn new(center: Vec3, block_size: f32, n: u32) -> Self {
         let index = CameraIndex::Index(0);
@@ -52,7 +66,6 @@ impl RenderState {
             utils::RequestedFormatType::AbsoluteHighestFrameRate,
         );
         let mut cam = Camera::new(index, requested).unwrap();
-        let fps = cam.frame_rate();
 
         let _ = cam.open_stream();
 
@@ -67,7 +80,7 @@ impl RenderState {
             .unwrap();
         let size = base_frame.size();
         //Init rendering pipeline
-
+        let _ = cam.stop_stream();
         let previous_frame = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("previous_frame"),
             size: size,
@@ -93,38 +106,61 @@ impl RenderState {
             view_formats: &[],
         });
         let mut encoder = device.create_command_encoder(&CommandEncoderDescriptor { label: None });
-        let copy_base = ImageCopyTextureBase {
-            texture: &base_frame,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::All,
-        };
-        let copy_previous = ImageCopyTextureBase {
-            texture: &previous_frame,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::All,
-        };
 
-        let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let uniform_buffer = device.create_buffer(&BufferDescriptor {
             label: Some("uniform_buffer"),
-            contents: &[],
+            size: std::mem::size_of::<RaymarchUniforms>() as u64,
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
-        });
-
-        let voxel_hit_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("voxel_buffer"),
-            contents: &[],
-            usage: BufferUsages::STORAGE | BufferUsages::COPY_SRC | BufferUsages::COPY_DST,
-        });
-        let counter = device.create_buffer(&BufferDescriptor {
-            label: Some("counter"),
-            size: 8,
-            usage: BufferUsages::STORAGE | BufferUsages::MAP_READ | BufferUsages::MAP_WRITE,
             mapped_at_creation: false,
         });
 
-        encoder.copy_texture_to_texture(copy_base, copy_previous, size);
+        let width = size.width;
+        let height = size.height;
+
+        let max_hits = (width * height * MAX_RAYMARCH_STEPS) as u64;
+        let hit_buffer_size = max_hits * std::mem::size_of::<VoxelHit>() as u64;
+
+        let hit_buffer = device.create_buffer(&BufferDescriptor {
+            label: Some("voxel_buffer"),
+            size: hit_buffer_size,
+            usage: BufferUsages::STORAGE | BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+        let counter = device.create_buffer(&BufferDescriptor {
+            label: Some("counter"),
+            size: 4,
+            usage: BufferUsages::STORAGE | BufferUsages::COPY_DST | BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+
+        let readback_buffer = device.create_buffer(&BufferDescriptor {
+            label: Some("readback_buffer"),
+            size: hit_buffer_size,
+            usage: BufferUsages::COPY_DST | BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+        let counter_readback = device.create_buffer(&BufferDescriptor {
+            label: Some("counter_readback"),
+            size: 4,
+            usage: BufferUsages::COPY_DST | BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+
+        encoder.copy_texture_to_texture(
+            ImageCopyTextureBase {
+                texture: &base_frame,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            ImageCopyTextureBase {
+                texture: &previous_frame,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            size,
+        );
         queue.submit(std::iter::once(encoder.finish()));
 
         let texture_bind_group_layout =
@@ -193,7 +229,7 @@ impl RenderState {
                         visibility: ShaderStages::COMPUTE,
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Storage { read_only: false },
-                            has_dynamic_offset: true,
+                            has_dynamic_offset: false,
                             min_binding_size: None,
                         },
                         count: None,
@@ -236,7 +272,7 @@ impl RenderState {
 
         let ray_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
             label: Some("ray_compute"),
-            layout: Some(&pipeline_layout),
+            layout: Some(&raymarch_pipeline_layout),
             module: &shader,
             entry_point: None,
             compilation_options: Default::default(),
@@ -284,7 +320,7 @@ impl RenderState {
                 BindGroupEntry {
                     binding: 2,
                     resource: BindingResource::Buffer(BufferBinding {
-                        buffer: &voxel_hit_buffer,
+                        buffer: &hit_buffer,
                         offset: 0, // i'm guessing we adjust this to be set to the counter, probably also want to set the size
                         size: None,
                     }),
@@ -300,15 +336,85 @@ impl RenderState {
             ],
         });
 
+        let voxel_info = VoxelInfo {
+            center,
+            block_size,
+            n,
+        };
+
         RenderState {
             cam,
-            fps,
             device,
             queue,
             diff_bind_group,
             diff_pipeline,
             ray_bind_group,
             ray_pipeline,
+            voxel_info,
+            counter,
+            hit_buffer,
+            size,
+            readback_buffer,
+            counter_readback,
         }
+    }
+    pub fn frame(&self) {
+        //copy new frame from camera to buffer here
+        let mut encoder = self
+            .device
+            .create_command_encoder(&CommandEncoderDescriptor {
+                label: Some("frame_encoder"),
+            });
+        let wg_x = self.size.width / 8;
+        let wg_y = self.size.height / 8;
+        let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
+        cpass.set_pipeline(&self.diff_pipeline);
+        cpass.set_bind_group(0, &self.diff_bind_group, &[]);
+        cpass.dispatch_workgroups(wg_x, wg_y, 1);
+
+        //uhhhh prepare the bindgroup here ig?
+        self.queue.write_buffer(&self.counter, 0, bytes_of(&0u32));
+
+        cpass.set_pipeline(&self.ray_pipeline);
+        cpass.set_bind_group(0, &self.diff_bind_group, &[]);
+        cpass.dispatch_workgroups(wg_x, wg_y, 1);
+        encoder.copy_buffer_to_buffer(
+            &self.counter,
+            0,
+            &self.counter_readback,
+            0,
+            self.counter.size(),
+        );
+        self.queue.submit(std::iter::once(encoder.finish()));
+    }
+
+    pub fn readback(&self) -> Vec<VoxelHit> {
+        let (tx, rx) = flume::unbounded();
+        self.counter_readback
+            .slice(..)
+            .map_async(wgpu::MapMode::Read, move |result| tx.send(result).unwrap());
+        self.device.poll(wgpu::MaintainBase::Wait);
+        rx.recv().unwrap().unwrap();
+        let out_counter = self.counter_readback.slice(..).get_mapped_range();
+        let count: u32 = bytemuck::cast_slice(&out_counter)[0];
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&CommandEncoderDescriptor {
+                label: Some("readback_encoder"),
+            });
+        let copy_size = (count * size_of::<VoxelHit>() as u32) as u64;
+        encoder.copy_buffer_to_buffer(&self.hit_buffer, 0, &self.readback_buffer, 0, copy_size);
+        self.queue.submit(std::iter::once(encoder.finish()));
+        let (tx, rx) = flume::unbounded();
+        self.readback_buffer
+            .slice(..copy_size)
+            .map_async(wgpu::MapMode::Read, move |result| tx.send(result).unwrap());
+        self.device.poll(wgpu::MaintainBase::Wait);
+        rx.recv().unwrap().unwrap();
+        let hits_bytes = self.readback_buffer.slice(..copy_size).get_mapped_range();
+        let hits: Vec<VoxelHit> = bytemuck::cast_slice(&hits_bytes).to_vec();
+        //send hits or w/e
+        hits
     }
 }
