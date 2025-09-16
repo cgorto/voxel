@@ -4,6 +4,7 @@ use nokhwa::{
     utils::{CameraIndex, RequestedFormat},
     *,
 };
+use std::mem::size_of;
 use wgpu::{
     BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor,
     BindGroupLayoutEntry, BindingResource, Buffer, BufferBinding, BufferDescriptor, BufferUsages,
@@ -12,14 +13,33 @@ use wgpu::{
     TextureFormat, TextureUsages, TextureViewDescriptor, TextureViewDimension, include_wgsl,
 };
 use winit::{
+    application::ApplicationHandler,
     event::*,
     event_loop::{ControlFlow, EventLoop},
     window::*,
 };
 
+use futures::executor::block_on;
 fn main() {
     let event_loop = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Poll);
+}
+
+struct App {
+    window: Option<Window>,
+    state: Option<RenderState>,
+}
+
+impl ApplicationHandler for App {
+    fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {}
+
+    fn window_event(
+        &mut self,
+        event_loop: &winit::event_loop::ActiveEventLoop,
+        window_id: WindowId,
+        event: WindowEvent,
+    ) {
+    }
 }
 
 struct Vec3 {
@@ -253,12 +273,13 @@ impl RenderState {
             push_constant_ranges: &[],
         });
 
-        let shader = device.create_shader_module(include_wgsl!("shader.wgsl"));
+        let diff_shader = device.create_shader_module(include_wgsl!("diff.wgsl"));
+        let ray_shader = device.create_shader_module(include_wgsl!("ray.wgsl"));
 
         let diff_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
             label: Some("diff_compute"),
             layout: Some(&pipeline_layout),
-            module: &shader,
+            module: &diff_shader,
             entry_point: None, //change
             compilation_options: Default::default(),
             cache: Default::default(),
@@ -273,7 +294,7 @@ impl RenderState {
         let ray_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
             label: Some("ray_compute"),
             layout: Some(&raymarch_pipeline_layout),
-            module: &shader,
+            module: &ray_shader,
             entry_point: None,
             compilation_options: Default::default(),
             cache: Default::default(),
@@ -376,7 +397,7 @@ impl RenderState {
         self.queue.write_buffer(&self.counter, 0, bytes_of(&0u32));
 
         cpass.set_pipeline(&self.ray_pipeline);
-        cpass.set_bind_group(0, &self.diff_bind_group, &[]);
+        cpass.set_bind_group(0, &self.ray_bind_group, &[]);
         cpass.dispatch_workgroups(wg_x, wg_y, 1);
         encoder.copy_buffer_to_buffer(
             &self.counter,
